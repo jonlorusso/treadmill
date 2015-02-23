@@ -1,84 +1,44 @@
-#define TREADMILL_PIN 9
+#define TREADMILL_PIN 10
+
+#define BAUD_RATE 9600
+#define INCREMENT 1
 
 #define STOP      255
 #define MAX_SPEED 210
 
 int currentSpeed = STOP;
-int incomingByte = 0;
+int newSpeed = STOP;
 
-void setup()
-{
-    Serial.begin(9600);
+void setup() {
+    Serial.begin(BAUD_RATE);
+
     pinMode(TREADMILL_PIN, OUTPUT);
+    analogWrite(TREADMILL_PIN, min(max(currentSpeed, 0), STOP));
+}
 
-    Serial.print("currentSpeed: ");
-    Serial.println(currentSpeed, DEC);
-    analogWrite(TREADMILL_PIN, min(max(currentSpeed, 0), 255));
+boolean validSpeed(int speed) {
+    return speed <= STOP && speed >= MAX_SPEED;
 }
 
 void loop() {
-    // send data only when you receive data:
-    if (Serial.available() > 0) {
-
-        // read the incoming byte:
-        incomingByte = Serial.read();
-        Serial.print("char (dec): ");
-        Serial.println(incomingByte, DEC);
-
-        switch (incomingByte) {
-            // s = STOP
-            case 115:
-                slowToStop();
-                break;
-            // j = increase speed
-            case 106:
-                increaseSpeed(1);
-                break;
-            // k = decrease speed
-            case 107:
-                decreaseSpeed(1);
-                break;
-            // xNNN = set speed to NNN
-            case 120:
-                int newSpeed = Serial.parseInt();
-                changeSpeed(newSpeed, 1, 100);
-                break;
-        }
+    if (currentSpeed < newSpeed) {
+        currentSpeed = min(STOP, currentSpeed + INCREMENT);
+        analogWrite(TREADMILL_PIN, currentSpeed);
+    } else if (currentSpeed > newSpeed) {
+        currentSpeed = max(MAX_SPEED, currentSpeed - INCREMENT);
+        analogWrite(TREADMILL_PIN, currentSpeed);
     }
 }
 
-void increaseSpeed(int increment) {
-    currentSpeed = max(MAX_SPEED, currentSpeed - increment);
-    setSpeed();
-}
+void serialEvent() {
+    while (Serial.available()) {
+        int input = Serial.parseInt();
 
-void decreaseSpeed(int decrement) {
-    currentSpeed = min(STOP, currentSpeed + decrement);
-    setSpeed();
-}
-
-void changeSpeed(int newSpeed, int increment, int msDelay) {
-    // slow down!
-    if (currentSpeed < newSpeed) {
-        while (currentSpeed < newSpeed && currentSpeed < STOP) {
-            decreaseSpeed(increment);
-            delay(msDelay);
-        }
-    } else if (currentSpeed > newSpeed) {
-        while (currentSpeed > newSpeed && currentSpeed > MAX_SPEED) {
-            increaseSpeed(increment);
-            delay(msDelay);
-        }
-    } 
-}
-
-void slowToStop() {
-    Serial.println("stop");
-    changeSpeed(STOP, 1, 100);
-}
-
-void setSpeed() {
-    Serial.print("currentSpeed: ");
-    Serial.println(currentSpeed, DEC);
-    analogWrite(TREADMILL_PIN, currentSpeed);
+        if (input == -1)
+            newSpeed = currentSpeed + 1;
+        else if (input == 1)
+            newSpeed = currentSpeed - 1;
+        else if (validSpeed(input))
+            newSpeed = input;
+    }
 }
