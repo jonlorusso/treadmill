@@ -6,4 +6,4 @@ This Arduino sketch is used to interface with a [Confidence Power Plus Treadmill
 
 New version using an [Adafruit HUZZAH](https://www.adafruit.com/product/2471)
 
-![HUZZZAH Controller](https://github.com/jonlorusso/treadmill/blob/master/huzzah-controller.png?raw=true)
+![HUZZZAH Controller](https://github.com/jonlorusso/treadmill/blob/master/huzzah-controller.jpg?raw=true)
